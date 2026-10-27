@@ -20,7 +20,7 @@ seammat=material('Piping | sage',(.23,.30,.22),.9);groundmat=material('Warm stud
 def finish(o,mat,bevel=0):
  o.data.materials.append(mat)
  if bevel:
-  mod=o.modifiers.new('Soft sanded edges','BEVEL');mod.width=bevel;mod.segments=3
+  mod=o.modifiers.new('Soft sanded edges','BEVEL');mod.width=bevel;mod.segments=6
   norm=o.modifiers.new('Weighted normals','WEIGHTED_NORMAL')
  return o
 def box(name,loc,dim,mat,bevel=0):
@@ -30,18 +30,18 @@ def prism(name,pts,y0,y1,mat):
  mesh=bpy.data.meshes.new(name);mesh.from_pydata(verts,[],faces);mesh.update();o=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(o)
  # Recalculate normals for bevel and rendering.
  bpy.context.view_layer.objects.active=o;o.select_set(True);bpy.ops.object.mode_set(mode='EDIT');bpy.ops.mesh.select_all(action='SELECT');bpy.ops.mesh.normals_make_consistent(inside=False);bpy.ops.object.mode_set(mode='OBJECT');o.select_set(False)
- return finish(o,mat,.001)
+ return finish(o,mat,.004 if name.startswith('04') else .005)
 # Coordinates in metres, floor top at .038 and ridge .560.
 T=.018;z0=.038;H=.560;slope=(H-z0)/.3;ih=H-T*math.sqrt(1+slope*slope);ix=(ih-z0)/slope
-box('01 | Solid wood floor 600 x 600 x 18 mm',(0,0,.029),(.6,.6,.018),woodmat,.002)
+box('01 | Solid wood floor 600 x 600 x 18 mm',(0,0,.029),(.6,.6,.018),woodmat,.006)
 left=[(-.3,z0),(0,H),(0,ih),(-ix,z0)]
 prism('02 | Left roof | 18 mm solid wood',left,-.3,.3,woodmat)
 prism('03 | Right roof | 18 mm solid wood',[(-x,z) for x,z in reversed(left)],-.3,.3,woodmat)
 rear=prism('04 | Rear triangular wall',[(-ix,z0),(ix,z0),(0,ih)],.282,.3,woodmat)
 bpy.ops.mesh.primitive_cylinder_add(vertices=96,radius=.03,depth=.06,location=(0,.291,.250),rotation=(math.pi/2,0,0));cutter=bpy.context.object
 mod=rear.modifiers.new('Ventilation hole diameter 60 mm','BOOLEAN');mod.object=cutter
-bpy.context.view_layer.objects.active=rear;bpy.ops.object.modifier_apply(modifier=mod.name);bpy.data.objects.remove(cutter,do_unlink=True)
-for i,(x,y) in enumerate([(-.25,-.25),(.25,-.25),(-.25,.25),(.25,.25)]):box(f'Foot {i+1} | 40 x 40 x 20 mm',(x,y,.01),(.04,.04,.02),woodmat,.003)
+bpy.context.view_layer.objects.active=rear;bpy.ops.object.modifier_move_up(modifier=mod.name);bpy.ops.object.modifier_move_up(modifier=mod.name);bpy.ops.object.modifier_apply(modifier=mod.name);bpy.data.objects.remove(cutter,do_unlink=True)
+for i,(x,y) in enumerate([(-.25,-.25),(.25,-.25),(-.25,.25),(.25,.25)]):box(f'Foot {i+1} | 40 x 40 x 20 mm',(x,y,.01),(.04,.04,.02),woodmat,.005)
 # Removable cushion with rounded corners.
 pad=box('Removable sage linen cushion | 450 x 520 x 40 mm',(0,-.015,.058),(.45,.52,.04),fabric)
 bevel=pad.modifiers.new('Soft rounded cushion','BEVEL');bevel.width=.018;bevel.segments=7
@@ -69,6 +69,6 @@ for ar in bpy.context.screen.areas:
  if ar.type=='VIEW_3D':
   ar.spaces.active.region_3d.view_distance=1.4;ar.spaces.active.region_3d.view_location=(0,0,.26)
 bpy.ops.object.select_all(action='DESELECT');bpy.context.view_layer.objects.active=pad
-scene['design_notes']='Tent solid wood cat house. Overall 600 x 600 x 560 mm. 18 mm wood. Concept model; fasteners not detailed.'
+scene['design_notes']='Tent solid wood cat house. Overall 600 x 600 x 560 mm. 18 mm wood. Rounded revision: roof 5 mm, base 6 mm, rear 4 mm, feet 5 mm, 6-segment bevels. Concept model; fasteners not detailed.'
 bpy.ops.wm.save_as_mainfile(filepath=O+'/tent_cat_house.blend')
 bpy.ops.render.render(write_still=True)
