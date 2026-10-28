@@ -162,6 +162,49 @@ for poly in vase.data.polygons: poly.use_smooth=True
 area('Dining warm task light',(.98,1.67,2.18),(.98,1.67,.6),55,1.2,(1,.84,.65))
 # Cleaner render, with adaptive sampling and higher sample budget.
 sc.cycles.samples=160; sc.cycles.adaptive_threshold=.06
-sc['reference_note']='Modern minimalist renovation based on original photo layout. Inferred dimensions 3.4 x 6.8 x 2.9 m.'
+
+# Client revision: exposed flat ceiling, continuous satin tiles, new furniture layout.
+remove_prefixes=['Individual oak floorboard','Oak skirting','Back skirting','Minimal ceiling shadow reveal','Warm concealed linear light','Dining pendant ceiling plate','Fine pendant suspension','Minimal black linear pendant','Linear pendant opal underside','Recessed downlight rim','Downlight diffuser','Fridge','Silver refrigerator','Dining oak apron','Marble dining tabletop','Dining table oak legs','Near dining chair','Far dining chair','Side dining chair','Sofa','Lounge oak feature panel','Dining warm task light']
+for o in list(bpy.data.objects):
+ if any(o.name.startswith(n) for n in remove_prefixes): bpy.data.objects.remove(o,do_unlink=True)
+tile=proc('Warm greige satin porcelain',(.51,.49,.44),(.56,.54,.49),3,(1,1,1),.4)
+# Subtle texture, soft reflection, narrow matching grout.
+for node in tile.node_tree.nodes:
+ if node.type=='BUMP': node.inputs['Strength'].default_value=.025
+joint=mat('Matching tile grout',(.39,.38,.35),.85)
+base=bpy.data.objects.get('Subfloor'); base.data.materials.clear(); base.data.materials.append(joint)
+for i in range(3):
+ for j in range(6):
+  x0=-1.7+i*1.2; x1=min(1.7,x0+1.2); y0=j*1.2; y1=min(6.8,y0+1.2)
+  box('Continuous 1200 satin porcelain tile',((x0+x1)/2,(y0+y1)/2,.007),(x1-x0-.002,y1-y0-.002,.022),tile,.001)
+for x in [-1.68,1.68]: box('Flush painted skirting',(x,3.4,.045),(.018,6.8,.09),wall,.002)
+# Surface mounted lights directly on original slab, no dropped ceiling.
+for y in [1.3,3.2,5.25]:
+ rod('Surface mounted flat ceiling light',(0,y,2.87),(0,y,2.915),.17,white)
+ rod('Surface light opal face',(0,y,2.86),(0,y,2.87),.155,em)
+# Larger 2.2 metre sofa along left lounge wall.
+box('Large sofa upholstered base',(-1.15,5.28,.33),(.96,2.2,.28),fabric,.10)
+box('Large sofa back',(-1.53,5.28,.73),(.22,2.2,.72),fabric,.10)
+for y in [4.24,6.32]: box('Large sofa arm',(-1.12,y,.6),(.98,.16,.46),fabric,.07)
+for y in [4.78,5.78]: box('Large sofa seat cushion',(-1.1,y,.53),(.72,.96,.19),fabric,.08)
+for x in [-1.5,-.8]:
+ for y in [4.35,6.2]: rod('Large sofa foot',(x,y,.03),(x,y,.21),.022,dark)
+# 350 mm deep entrance shoe storage on original dining wall.
+box('Shoe cabinet carcass',(1.49,1.65,1.43),(.38,2.12,2.86),white,.012)
+for y in [.87,1.39,1.91,2.43]:
+ box('Shoe cabinet lower flush door',(1.287,y,.49),(.028,.508,.86),white,.005)
+ box('Shoe cabinet upper flush door',(1.287,y,2.14),(.028,.508,1.38),white,.005)
+# Recessed countertop niche breaks up full height mass.
+box('Shoe cabinet recessed oak niche',(1.293,1.65,1.19),(.014,2.04,.43),wood,.003)
+box('Shoe cabinet niche countertop',(1.23,1.65,.969),(.18,2.08,.035),wood,.004)
+box('Shoe cabinet plinth shadow',(1.285,1.65,.055),(.025,2.02,.08),dark,.002)
+# A 1.05 m round pedestal table in left front zone; three compact chairs.
+rod('Round stone dining tabletop',(-.82,2.72,.755),(-.82,2.72,.79),.525,marble)
+rod('Round dining pedestal',(-.82,2.72,.07),(-.82,2.72,.755),.16,wood)
+rod('Round dining foot',(-.82,2.72,.025),(-.82,2.72,.07),.32,dark)
+chair('Relocated dining chair front',-.82,1.91,math.pi)
+chair('Relocated dining chair rear',-.82,3.53,0)
+chair('Relocated dining chair aisle',-.02,2.72,-math.pi/2)
+sc['reference_note']='Flat original ceiling, 1200 mm satin porcelain tiles, no refrigerator, 2.2 m sofa, shoe cabinet on original dining wall, relocated 1.05 m round dining table. Dimensions inferred.'
 bpy.ops.wm.save_as_mainfile(compress=True,filepath=OUT+'/photo_apartment.blend')
 bpy.ops.render.render(write_still=True)
