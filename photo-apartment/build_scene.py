@@ -109,5 +109,59 @@ area('Ceiling bounce',(0,4.85,2.67),(0,4.8,0),160,1.8,(1,.95,.88))
 area('Entry soft daylight',(-.4,-1,2.1),(0,3,1),260,3,(.87,.93,1))
 bpy.ops.object.camera_add(location=(-.48,-.3,1.62)); cam=bpy.context.object; cam.name='Photo matching entrance camera'; cam.rotation_euler=(Vector((.04,4.7,1.36))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.lens=20; bpy.context.scene.camera=cam
 sc=bpy.context.scene; sc.render.engine='CYCLES'; sc.cycles.samples=48; sc.cycles.use_denoising=False; sc.render.resolution_x=1200; sc.render.resolution_y=900; sc.render.resolution_percentage=100; sc.world.color=(.22,.22,.22); sc.view_settings.view_transform='AgX'; sc.render.image_settings.file_format='PNG'; sc.render.filepath=OUT+'/preview.png'
-sc['reference_note']='Approximate reconstruction from one supplied photograph. Dimensions inferred; artwork represented procedurally.'
-bpy.ops.wm.save_as_mainfile(compress=True,filepath=OUT+'/photo_apartment.blend'); bpy.ops.render.render(write_still=True)
+
+# Modern minimalist renovation: restrained palette and architectural lines.
+def recolor(m,c,rough=.6):
+ p=m.node_tree.nodes.get('Principled BSDF')
+ for link in list(m.node_tree.links):
+  if link.to_socket==p.inputs['Base Color']: m.node_tree.links.remove(link)
+ p.inputs['Base Color'].default_value=(*c,1); p.inputs['Roughness'].default_value=rough
+recolor(wall,(.83,.81,.76),.88)
+recolor(white,(.73,.71,.65),.5)
+recolor(fabric,(.43,.40,.35),.85)
+recolor(marble,(.72,.70,.65),.28)
+recolor(steel,(.36,.37,.36),.4)
+# Low contrast pale oak.
+for node in wood.node_tree.nodes:
+ if node.type=='VALTORGB':
+  node.color_ramp.elements[0].color=(.39,.29,.18,1)
+  node.color_ramp.elements[-1].color=(.61,.49,.33,1)
+for o in list(bpy.data.objects):
+ if any(o.name.startswith(n) for n in ['Crown molding','Dark wood picture frame','Landscape paper','Ink landscape brushstroke','Ceiling light black housing','Square luminous diffuser','Entry pendant cable','Black entry pendant shade','Pendant luminous disk','Wardrobe metal pull']): bpy.data.objects.remove(o,do_unlink=True)
+# Minimal flush ceiling edge and concealed light cove.
+for x in [-1.66,1.66]:
+ box('Minimal ceiling shadow reveal',(x,3.4,2.9),(.035,6.8,.025),dark,.002)
+ box('Warm concealed linear light',(x,3.4,2.875),(.018,6.8,.018),em,.003)
+# Slim single linear pendant above dining zone.
+box('Dining pendant ceiling plate',(.98,1.67,2.93),(.12,.65,.035),dark,.006)
+for y in [1.1,2.24]: rod('Fine pendant suspension',(.98,y,2.9),(.98,y,2.28),.003,dark)
+box('Minimal black linear pendant',(.98,1.67,2.26),(.045,1.42,.045),dark,.009)
+box('Linear pendant opal underside',(.98,1.67,2.235),(.03,1.38,.008),em,.003)
+for y in [3.5,4.65,5.8]:
+ rod('Recessed downlight rim',(0,y,2.9),(0,y,2.93),.065,dark)
+ rod('Downlight diffuser',(0,y,2.89),(0,y,2.9),.05,em)
+# One oversized abstract artwork replaces small traditional pictures.
+artframe=mat('Champagne slim frame',(.22,.19,.14),.35,.5)
+canvas=mat('Warm linen canvas',(.66,.61,.52),.95)
+clay=mat('Muted clay abstract',(.30,.24,.18),.95)
+box('Oversized minimalist art frame',(-1.66,1.9,1.99),(.035,1.12,.79),artframe,.004)
+box('Textured neutral art canvas',(-1.635,1.9,1.99),(.012,1.08,.75),canvas,.001)
+box('Abstract geometric field',(-1.625,1.68,1.94),(.008,.37,.5),clay,.001)
+rod('Abstract circular motif',(-1.622,2.1,2.08),(-1.615,2.1,2.08),.23,white)
+# Full height oak accent behind lounge, large neutral rug.
+box('Lounge oak feature panel',(-1.675,5.28,1.4),(.035,1.8,2.75),wood,.006)
+rug=proc('Oatmeal flatwoven rug',(.35,.32,.27),(.50,.47,.40),120,(1,1,1),.95)
+box('Lounge woven area rug',(-.5,5.25,.03),(1.75,2.05,.018),rug,.035)
+# Handleless storage with a quiet recessed toe kick.
+box('Wardrobe recessed plinth',(.98,6.14,.055),(1.17,.05,.075),dark,.001)
+# Simple tray and sculptural ceramic vase.
+ceramic=mat('Chalk ceramic',(.65,.61,.53),.7)
+rod('Coffee table shallow tray',(-.35,5.45,.51),(-.35,5.45,.53),.17,dark)
+bpy.ops.mesh.primitive_uv_sphere_add(segments=32,ring_count=16,location=(-.35,5.45,.64)); vase=bpy.context.object; vase.name='Sculptural ceramic vessel'; vase.scale=(.085,.085,.12); vase.data.materials.append(ceramic)
+for poly in vase.data.polygons: poly.use_smooth=True
+area('Dining warm task light',(.98,1.67,2.18),(.98,1.67,.6),55,1.2,(1,.84,.65))
+# Cleaner render, with adaptive sampling and higher sample budget.
+sc.cycles.samples=160; sc.cycles.adaptive_threshold=.06
+sc['reference_note']='Modern minimalist renovation based on original photo layout. Inferred dimensions 3.4 x 6.8 x 2.9 m.'
+bpy.ops.wm.save_as_mainfile(compress=True,filepath=OUT+'/photo_apartment.blend')
+bpy.ops.render.render(write_still=True)
